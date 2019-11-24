@@ -10,8 +10,11 @@ const gPrint    = require( 'gulp-print' ).default;
 const yargs     = require( 'yargs' ).argv;
 const gLess     = require( 'gulp-less' );
 const gAprFixer = require( 'gulp-autoprefixer' );
+const del       = require( 'del' );
 const config    = require( './gulp.config' )();
 
+
+// FUNCTIONS
 //----------------------------------------------------------------------------------------------------------------------
 const log = ( msg ) => {
   if ( typeof ( msg ) === 'object') {
@@ -26,6 +29,10 @@ const log = ( msg ) => {
   }
 };
 
+const clean = ( path ) => {
+  log( `Cleaning ${c.cyan( path )}` );
+  del( path );
+};
 
 //----------------------------------------------------------------------------------------------------------------------
 gulp.task( 'vet', () => {
@@ -48,10 +55,23 @@ gulp.task( 'styles', () => {
   log( 'Compiling Less --> CSS' );
   return combiner.obj( [
     gulp
-      .src( config.less ) // TODO: add the config
+      .src( config.less )
       .pipe( gLess() )
       .pipe( gAprFixer( { browsers: ['last 2 version', '> 5%'] } ) )
       .pipe( gulp.dest( config.temp ) ),
   ])
     .on( 'error', console.error.bind( console ) );
 });
+
+gulp.task( 'clean-styles', ( done ) => {
+  const files = `${config.temp}**/*.css`;
+  clean( files );
+  done();
+});
+
+gulp.task( 'less-watcher', () => {
+  gulp.watch( [config.less], ['styles'] );
+});
+
+// we need to delete 'styles.css' berore run gulp 'styles'
+gulp.task( 'runStyles', gulp.series( 'clean-styles', 'styles' ) );
